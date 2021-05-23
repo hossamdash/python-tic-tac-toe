@@ -45,6 +45,7 @@ class Example(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.player = ""
         self.turn = "X"
         self.initUI()
         self.x_score = 0
@@ -55,6 +56,10 @@ class Example(QWidget):
         )
         self.player = self.chat_object.receive()
         print(f"player {self.player}")
+        self.player_label.setText("{}\nPlayer".format(self.player))
+
+        if self.player != self.turn:
+            self.otherPalyerTurn()
 
     def initUI(self):
         self.game_size = 3
@@ -80,10 +85,12 @@ class Example(QWidget):
 
         # turn label
         self.turn_label = QLabel("{}\nTurn".format(self.turn))
+        self.player_label = QLabel("{}\nPlayer".format(self.player))
         font = self.turn_label.font()
         font.setPointSize(20)
         self.turn_label.setFont(font)
         grid.addWidget(self.turn_label, self.game_size + 1, 0)
+        grid.addWidget(self.player_label, self.game_size + 2, 0)
         self.turn_label.setAlignment(Qt.AlignCenter)
 
         # newgame button
@@ -134,20 +141,33 @@ class Example(QWidget):
                 print("draw")
                 self.newGame()
 
-    def endTurn(self):
+    def _otherPalyerTurn(self):
+        message = self.chat_object.receive()
+        i, j = map(lambda x: int(x), message.split(" "))
+        self.buttons[i][j].setText(self.turn)
+        self.toggle_turn()
+        self.checkGame()
+
+    def otherPalyerTurn(self):
+        threading.Thread(target=self._otherPalyerTurn).start()
+
+    def toggle_turn(self):
         if self.turn == "X":
             self.turn = "O"
         else:
             self.turn = "X"
-        message = self.chat_object.receive()
-        i, j = message.split(" ")
-        self.buttons[i][j].setText(self.turn)
         self.turn_label.setText("{}\nTurn".format(self.turn))
-        self.checkGame()
 
-    def takeTurn(self, button, i, j):
+    def endTurn(self):
+        self.toggle_turn()
+        self.checkGame()
+        self.otherPalyerTurn()
+
+    def takeTurn(self, button: QPushButton, i, j):
         def action():
-            if button.text() == "" or button.text() != self.player:
+            if self.player != self.turn:
+                return
+            if button.text() == "" and button.text() != self.player:
                 button.setText(self.player)
                 self.chat_object.write(f"{i} {j}")
                 self.endTurn()

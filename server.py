@@ -56,6 +56,8 @@ def receive():
         nickname = f'player {turn}'
         if turn == "X":
             turn = "O"
+        elif turn == "O":
+            turn = "X"
         # # Request And Store Nickname
         # client_socket.send("/id".encode("utf-8"))
         # nickname = client_socket.recv(1024).decode("utf-8")
