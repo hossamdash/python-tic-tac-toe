@@ -14,7 +14,6 @@ class SocketChat:
         self.client_socket = socket.socket(
             family=socket.AF_INET, type=socket.SOCK_STREAM
         )
-        self.connection = True
 
     def receive(self):
         message = self.client_socket.recv(1024).decode("utf-8")
@@ -54,6 +53,8 @@ class Example(QWidget):
         self.chat_object.client_socket.connect(
             (self.chat_object.IP, self.chat_object.PORT)
         )
+        self.player = self.chat_object.receive()
+        print(f"player {self.player}")
 
     def initUI(self):
         self.game_size = 3
@@ -70,7 +71,7 @@ class Example(QWidget):
             for j in range(self.game_size):
                 button = QPushButton()
                 button.setFixedSize(200, 200)
-                button.clicked.connect(self.takeTurn(button))
+                button.clicked.connect(self.takeTurn(button, i, j))
                 font = button.font()
                 font.setPointSize(60)
                 button.setFont(font)
@@ -139,22 +140,16 @@ class Example(QWidget):
         else:
             self.turn = "X"
         message = self.chat_object.receive()
-        index = ''.join(char for char in message if char.isdigit())
-        self.buttons[index[0], index[1]].setText(self.turn)
+        i, j = message.split(" ")
+        self.buttons[i][j].setText(self.turn)
         self.turn_label.setText("{}\nTurn".format(self.turn))
         self.checkGame()
 
-    def takeTurn(self, button):
+    def takeTurn(self, button, i, j):
         def action():
-            if button.text() == "":
-                button.setText(self.turn)
-                tuple = [
-                    (index, row.index(button))
-                    for index, row in enumerate(self.buttons)
-                    if button in row
-                ]
-                print(tuple)
-                self.chat_object.write(str(tuple))
+            if button.text() == "" or button.text() != self.player:
+                button.setText(self.player)
+                self.chat_object.write(f"{i} {j}")
                 self.endTurn()
 
         return action
